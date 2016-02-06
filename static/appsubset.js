@@ -1,0 +1,200 @@
+(function() {
+
+    // var N = document.getElementsByClassName("row")[0].clientWidth;    
+    var N = document.getElementById("box").clientWidth;
+    var canvas = document.getElementById('canvas');
+
+    var ctx = canvas.getContext('2d');
+    var bcr = canvas.getBoundingClientRect();
+
+    canvas.width = N;
+    canvas.height = N;
+
+    var x0 = document.getElementById("x0");
+    var y0 = document.getElementById("y0");
+    var x1 = document.getElementById("x1");
+    var y1 = document.getElementById("y1");
+    var degree = document.getElementById("degree");
+
+
+    $(function() {
+        $('a, button').click(function() {
+            $(this).find("span").addClass("glyphicon-refresh glyphicon-refresh-animate");
+        });
+    });
+
+    var dst;
+    var rect = {},
+        drag = false;
+
+    function init() {
+        canvas.addEventListener('mousedown', mouseDown, false);
+        canvas.addEventListener('mouseup', mouseUp, false);
+        canvas.addEventListener('mousemove', mouseMove, false);
+    }
+
+    // function mouseDown(e) {
+    //     dst = ctx.getImageData(0, 0, N, N); //x,y,w,h		
+    //     rect.startX = e.pageX - this.offsetLeft;
+    //     rect.startY = e.pageY - this.offsetTop;
+    //     drag = true;
+    // }
+    function mouseDown(e) {
+        dst = ctx.getImageData(0, 0, N, N); //x,y,w,h
+        var bcr = canvas.getBoundingClientRect();
+        rect.startX = e.clientX - bcr.left;
+        rect.startY = e.clientY - bcr.top;
+        drag = true;
+    }
+
+    function mouseUp() {
+        drag = false;
+        var values = {};
+
+        values.degree = degree.value;
+        // console.log(x0.value, x1.value, y0.value, y1.value);
+        var x0p = Math.min(rect.startX, rect.startX + rect.w);
+        var x1p = Math.max(rect.startX, rect.startX + rect.w);
+        var y0p = Math.min(rect.startY, rect.startY + rect.h);
+        var y1p = Math.max(rect.startY, rect.startY + rect.h);
+        // console.log(rect);
+        // console.log(x0p, x1p, y0p, y1p);
+        var xlen = (Number(x1.value) - Number(x0.value));
+        var ylen = (Number(y1.value) - Number(y0.value));
+        values.x0 = Number(x0.value) + xlen * x0p / N;
+        values.x1 = Number(x0.value) + xlen * x1p / N;
+        values.y0 = Number(y0.value) + ylen * y0p / N;
+        values.y1 = Number(y0.value) + ylen * y1p / N;
+
+        x0.value = values.x0;
+        y0.value = values.y0;
+        x1.value = values.x1;
+        y1.value = values.y1;
+
+        var url = makeUrl(values);
+        // console.log(x0.value, x1.value, y0.value, y1.value);
+        loadDoc(url, renderResponse, ctx);
+
+    }
+
+    function mouseMove(e) {
+        var bcr = canvas.getBoundingClientRect();
+        if (drag) {
+            rect.w = (e.clientX - bcr.left) - rect.startX;
+            rect.h = (e.clientY - bcr.top) - rect.startY; // (e.pageY - this.offsetTop)
+            ctx.putImageData(dst, 0, 0);
+            draw();
+        }
+    }
+
+    function draw() {
+        ctx.setLineDash([5, 10]);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+
+        ctx.strokeRect(rect.startX, rect.startY, rect.w, rect.h);
+    }
+
+    init();
+
+    var form = document.getElementById("frm");
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        var values = {};
+        for (var i = 0; i < this.length; i++) {
+            var name = this.elements[i].name;
+            var value = this.elements[i].value;
+            values[name] = value;
+        };
+        var url = makeUrl(values);
+        loadDoc(url, renderResponse, ctx);
+    });
+
+
+    document.getElementById("reset").addEventListener("click", function() {
+        var params = {};
+        params.x0 = -1.7;
+        params.x1 = 1.7;
+        params.y0 = -1.7;
+        params.y1 = 1.7;
+        params.degree = 10;
+
+        x0.value = params.x0;
+        y0.value = params.y0;
+        x1.value = params.x1;
+        y1.value = params.y1;
+        degree.value = params.degree;
+        var url = makeUrl(params);
+        loadDoc(url, renderResponse, ctx);
+    }, false);
+
+
+    function makeUrl(params) {
+        var M, x0, x1, y0, y1, degree, R, urlBase, url, x, y;
+        urlBase = "http://localhost:5000/api";
+        // N = Math.floor(Math.min(window.innerHeight, window.innerWidth));
+        M = N;
+        // console.log("N=", N);
+        degree = params.degree;
+        x0 = params.x0;
+        x1 = params.x1;
+        y0 = params.y0;
+        y1 = params.y1;
+
+        url = urlBase + "/" + N + "/" + M + "/" + x0 + "/" + x1 + "/" + y0 + "/" + y1 + "/" + degree;
+        return url;
+    }
+
+
+    function loadDoc(url, cFunc, ctx) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (xhttp.readyState == 4) {
+                if (xhttp.status == 200) {
+                    cFunc(xhttp, ctx);
+                } else {
+                    console.log("ERROR", xhttp.status);
+                }
+                $(".glyphicon-refresh").removeClass("glyphicon-refresh glyphicon-refresh-animate");
+
+            }
+        };
+        xhttp.open("GET", url, true);
+        xhttp.send();
+    }
+
+
+    function renderResponse(xmlhttp, ctx) {
+        var arr = JSON.parse(xmlhttp.responseText);
+        var N = arr.N;
+        var M = arr.M;
+
+        var palette = ctx.getImageData(0, 0, N, M); //x,y,w,h
+        palette.data.set(new Uint8ClampedArray(arr.roots));
+        ctx.putImageData(palette, 0, 0);
+        // draw axes		
+        ctx.setLineDash([5, 10]);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, N / 2);
+        ctx.lineTo(N, N / 2);
+        ctx.moveTo(N / 2, 0);
+        ctx.lineTo(N / 2, N);
+        ctx.stroke();
+        ctx.fillStyle = "#ffffff";
+        // ctx.font = "10pt Arial";
+        var numTicks = 5;
+        var yOff = 11;
+        var xOff = 38;
+
+        for (var i = 0; i < numTicks; i++) {
+            var xtick = (Number(x0.value) + (Number(x1.value) - Number(x0.value)) * i / numTicks).toPrecision(4);
+            var ytick = (Number(y0.value) + (Number(y1.value) - Number(y0.value)) * i / numTicks).toPrecision(4);
+            ctx.fillText(xtick, i * N / numTicks, N / 2 + yOff);
+            if (i != numTicks / 2) {
+                ctx.fillText(xtick, N / 2 - xOff, i * N / numTicks);
+            }
+        }
+    }
+})();
