@@ -1,8 +1,8 @@
 TODO
 * Replace OpenMP with MPI/something else
-* Determine the number of points (N,M) using the client's screen size
+* ~~Determine the number of points (N,M) using the client's screen size~~
 * Use modulus instead of cutting off high counts
-* SPEED UP JS!
+* ~~SPEED UP JS!~~
 * Initially compute very high resolution version of image,
    then pass that to the client, which only plots a subset of the points.
    The client can just replot from this dataset upon resizing as long
