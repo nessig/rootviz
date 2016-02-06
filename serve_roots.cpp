@@ -18,6 +18,7 @@ inline T abs2(std::complex<T> z)
     return x*x + y*y;
 }
 
+// colormap similar to matplotlib's gist_heat
 static void colormap(double x, float& r, float& g, float& b)
 {
     x = std::min(std::max(0.0, x), 1.0); // clamp
@@ -73,7 +74,6 @@ void minPolys(float* result, int N, int M,
               int degree)
 {
     int linesdone = 0;
-	// float maxPoint = 10.0;
 #   pragma omp parallel for schedule(dynamic, 1)
     for(int j = 0; j < M; ++j)
     {
@@ -106,30 +106,7 @@ void minPolys(float* result, int N, int M,
             // Weight of 1/|z|^degree implies z <--> 1/z symmetry
 			
             result[N*j + i] = sqrt(minpoly / pow(abs(z),degree));
-
-			// double point = sqrt(minpoly / pow(abs(z),degree));
-			// float maxPoint = std::max(maxPoint, point);
-			// float r,g,b;
 			
-			// colormap(1 - (pow(point, 0.01) - 0.95)/0.1, r,g,b);
-			
-			// double xp = 1.0 - point; // 1 - (pow(point, 0.01) - 0.95)/0.1;
-			// double xp = 1.0 - (pow(point, 0.01) - 0.95)/0.1;
-			// xp = std::min(std::max(0.0, xp), 1.0); // clamp
-			// r = std::min(1.0, xp/0.7);
-			// g = std::max(0.0, (xp - 0.477)/(1 - 0.477));
-			// b = std::max(0.0, (xp - 0.75)/(1 - 0.75));
-
-
-			// result[4*(N*j + i)] = lround(r*255);
-			// result[4*(N*j + i)+1] = lround(g*255);
-			// result[4*(N*j + i)+2] = lround(b*255);
-			// result[4*(N*j + i)+3] = lround(255);
-			// var x = 1 - (Math.pow(roots[j * N + i], 0.01) - 0.95) / 0.1;
-			// x = Math.min(Math.max(0.0, val), 1.0);
-			// if ((i == 1000) and (j==1000)) {
-			//   std::cout << result[N*j + i] << std::endl;
-			// }
         }
 #       pragma omp critical
         {
@@ -141,15 +118,18 @@ void minPolys(float* result, int N, int M,
 }
 
 int main() {
+	// connect to zmq socket
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://*:5555");
 
     while (true) {
+		// wait for requests...
 		zmq::message_t request;
 
 		socket.recv (&request);
 		std::string rpl = std::string(static_cast<char*>(request.data()), request.size());
+		// parse request for plotting parameters
 		std::istringstream iss (rpl);
 		int degree, N, M;
 
@@ -165,15 +145,18 @@ int main() {
 
 		std::cout << degree << " " << N << " " << M << " " << " " << x0 << " " << x1 << " " << y0 << " " << y1 << std::endl;
       
-		// float* result = new float[N*M];
 		float* result = new float[N*M];
-	  
+
+		// find zeros
 		minPolys(result, N, M, x0, x1, y0, y1, degree);
+		
 		// writeFile("app/static/minpoly.dat", N, M, result);
-		// delete[] result;      
+
 		std::stringstream ss;
 		std::string ans;
 
+
+		// write rgba values encoding the distribution into a string stream in JSON format
 		ss << "{\"N\":" << N << "," << "\"M\":" <<  M << "," << "\"roots\":[";
 		const char* separator = "";
 		for (int j=0; j < M; ++j) {
@@ -191,11 +174,14 @@ int main() {
 			}
 		}
 		ss << "]}";
-		delete[] result;
-		ans = ss.str();
-		// writeFile("minpoly.dat", N, M, result);
-		// std::string ans = "True";
 
+		// clean up and free the array
+		delete[] result;
+
+		// empty string stream into string
+		ans = ss.str();
+
+		// send values through zmq socket
 		zmq::message_t reply (ans.size());
 		memcpy ((void *) reply.data(), ans.data(), ans.size());
 		socket.send (reply);

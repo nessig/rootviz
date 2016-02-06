@@ -1,11 +1,9 @@
 (function() {
 
-    // var N = document.getElementsByClassName("row")[0].clientWidth;    
     var N = document.getElementById("box").clientWidth;
     var canvas = document.getElementById('canvas');
 
     var ctx = canvas.getContext('2d');
-    var bcr = canvas.getBoundingClientRect();
 
     canvas.width = N;
     canvas.height = N;
@@ -17,15 +15,6 @@
     var degree = document.getElementById("degree");
 
 
-    $(function() {
-        $('a, button').click(function() {
-            $(this).find("span").addClass("glyphicon-refresh glyphicon-refresh-animate");
-        });
-    });
-
-    var dst;
-    var rect = {},
-        drag = false;
 
     function init() {
         canvas.addEventListener('mousedown', mouseDown, false);
@@ -33,12 +22,10 @@
         canvas.addEventListener('mousemove', mouseMove, false);
     }
 
-    // function mouseDown(e) {
-    //     dst = ctx.getImageData(0, 0, N, N); //x,y,w,h		
-    //     rect.startX = e.pageX - this.offsetLeft;
-    //     rect.startY = e.pageY - this.offsetTop;
-    //     drag = true;
-    // }
+    var dst;
+    var rect = {},
+        drag = false;
+
     function mouseDown(e) {
         dst = ctx.getImageData(0, 0, N, N); //x,y,w,h
         var bcr = canvas.getBoundingClientRect();
@@ -52,13 +39,12 @@
         var values = {};
 
         values.degree = degree.value;
-        // console.log(x0.value, x1.value, y0.value, y1.value);
+
         var x0p = Math.min(rect.startX, rect.startX + rect.w);
         var x1p = Math.max(rect.startX, rect.startX + rect.w);
         var y0p = Math.min(rect.startY, rect.startY + rect.h);
         var y1p = Math.max(rect.startY, rect.startY + rect.h);
-        // console.log(rect);
-        // console.log(x0p, x1p, y0p, y1p);
+
         var xlen = (Number(x1.value) - Number(x0.value));
         var ylen = (Number(y1.value) - Number(y0.value));
         values.x0 = Number(x0.value) + xlen * x0p / N;
@@ -72,7 +58,6 @@
         y1.value = values.y1;
 
         var url = makeUrl(values);
-        // console.log(x0.value, x1.value, y0.value, y1.value);
         loadDoc(url, renderResponse, ctx);
 
     }
@@ -81,7 +66,7 @@
         var bcr = canvas.getBoundingClientRect();
         if (drag) {
             rect.w = (e.clientX - bcr.left) - rect.startX;
-            rect.h = (e.clientY - bcr.top) - rect.startY; // (e.pageY - this.offsetTop)
+            rect.h = (e.clientY - bcr.top) - rect.startY;
             ctx.putImageData(dst, 0, 0);
             draw();
         }
@@ -124,17 +109,20 @@
         x1.value = params.x1;
         y1.value = params.y1;
         degree.value = params.degree;
+
         var url = makeUrl(params);
         loadDoc(url, renderResponse, ctx);
     }, false);
 
 
     function makeUrl(params) {
-        var M, x0, x1, y0, y1, degree, R, urlBase, url, x, y;
+        var N, M, x0, x1, y0, y1, degree, R, urlBase, url, x, y;
         urlBase = "http://localhost:5000/api";
-        // N = Math.floor(Math.min(window.innerHeight, window.innerWidth));
+
+        // N = document.getElementById("box").clientWidth;
+        N = canvas.width;
+
         M = N;
-        // console.log("N=", N);
         degree = params.degree;
         x0 = params.x0;
         x1 = params.x1;
@@ -143,6 +131,15 @@
 
         url = urlBase + "/" + N + "/" + M + "/" + x0 + "/" + x1 + "/" + y0 + "/" + y1 + "/" + degree;
         return url;
+    }
+
+
+    var addAnimation = function() {
+        this.children[0].className += " glyphicon-refresh glyphicon-refresh-animate";
+    };
+    var buttons = document.getElementsByClassName("btn");
+    for (var i = 0; i < buttons.length; i++) {
+        buttons[i].addEventListener('click', addAnimation, false);
     }
 
 
@@ -155,8 +152,10 @@
                 } else {
                     console.log("ERROR", xhttp.status);
                 }
-                $(".glyphicon-refresh").removeClass("glyphicon-refresh glyphicon-refresh-animate");
-
+                var glyphs = document.getElementsByClassName("glyphicon-refresh");
+                for (var i = 0; i < glyphs.length; i++) {
+                    glyphs[i].className = "glyphcon";
+                }
             }
         };
         xhttp.open("GET", url, true);
@@ -172,7 +171,12 @@
         var palette = ctx.getImageData(0, 0, N, M); //x,y,w,h
         palette.data.set(new Uint8ClampedArray(arr.roots));
         ctx.putImageData(palette, 0, 0);
-        // draw axes		
+        // draw axes
+        styleImage(ctx, N);
+    }
+
+
+    function styleImage(ctx, N) {
         ctx.setLineDash([5, 10]);
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
@@ -183,7 +187,7 @@
         ctx.lineTo(N / 2, N);
         ctx.stroke();
         ctx.fillStyle = "#ffffff";
-        // ctx.font = "10pt Arial";
+
         var numTicks = 5;
         var yOff = 11;
         var xOff = 38;
@@ -197,4 +201,5 @@
             }
         }
     }
+
 })();
