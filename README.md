@@ -1,8 +1,9 @@
 The flask app uses pyzmq, which can be installed using easy_install, pip, anaconda, etc...
 
 The following compiles using Homebrew installed gcc 5.3:
+```
 	g++-5 -lzmq serve_roots.cpp -o serve_roots
-
+```
 Check the Makefile for additional flags.
 
 
