@@ -1,4 +1,11 @@
-TODO
+The flask app uses pyzmq, which can be installed using easy_install, pip, anaconda, etc...
+
+The following compiles using Homebrew installed gcc 5.3:
+	g++-5 -lzmq serve_roots.cpp -o serve_roots
+Check the Makefile for additional flags.
+
+
+TODO:
 * Replace OpenMP with MPI/something else
 * ~~Determine the number of points (N,M) using the client's screen size~~
 * Use modulus instead of cutting off high counts
