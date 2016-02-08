@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <zmq.hpp>
 #include <complex>
 #include <algorithm>
@@ -73,6 +75,11 @@ void minPolys(float* result, int N, int M,
               double x0, double x1, double y0, double y1,
               int degree)
 {
+	zmq::context_t context2 (1);
+
+    zmq::socket_t publisher (context2, ZMQ_PUB);
+    publisher.bind("tcp://*:5556");
+    // publisher.bind("ipc://weather.ipc");
     int linesdone = 0;
 #   pragma omp parallel for schedule(dynamic, 1)
     for(int j = 0; j < M; ++j)
@@ -111,7 +118,26 @@ void minPolys(float* result, int N, int M,
 #       pragma omp critical
         {
             ++linesdone;
-            std::cout << 100.0*linesdone/M << "%   \r" << std::flush;
+            // std::cout << 100.0*linesdone/M << "%   \r" << std::flush;
+			std::stringstream progress;
+			progress << linesdone << " ";
+			std::string ans = progress.str();
+			
+			// std::string ans = "hello hello";
+			zmq::message_t message(15);
+			// int zipcode = 10001;
+			// int temperature = 88;
+			// int relhumidity = 44;
+			// snprintf ((char *) message.data(), 20, "%s %s", "hello", "friend!");
+
+			// snprintf ((char *) message.data(), 15, "%s %s", "hello", ans.data());
+			snprintf ((char *) message.data(), 15, "%s", ans.data());
+
+			// send values through zmq socket
+			// zmq::message_t replyProgress (ans.size());
+			// memcpy ((void *) replyProgress.data(), ans.data(), ans.size());
+			publisher.send (message);
+
         }
 
     }
@@ -122,8 +148,16 @@ int main() {
     zmq::context_t context (1);
     zmq::socket_t socket (context, ZMQ_REP);
     socket.bind ("tcp://*:5555");
+	// std::string ans = "hello hello";
+	// zmq::context_t context2 (1);
+	// // std::stringstream progress;
+    // zmq::socket_t publisher (context2, ZMQ_PUB);
+    // publisher.bind("tcp://*:5556");
+    // publisher.bind("ipc://weather.ipc");
 
     while (true) {
+
+
 		// wait for requests...
 		zmq::message_t request;
 
@@ -147,12 +181,16 @@ int main() {
       
 		float* result = new float[N*M];
 
+
+		
+
 		// find zeros
 		minPolys(result, N, M, x0, x1, y0, y1, degree);
 		
 		// writeFile("app/static/minpoly.dat", N, M, result);
 
 		std::stringstream ss;
+		
 		std::string ans;
 
 
@@ -185,6 +223,27 @@ int main() {
 		zmq::message_t reply (ans.size());
 		memcpy ((void *) reply.data(), ans.data(), ans.size());
 		socket.send (reply);
+
+		// // int zipcode = 10001;
+		// int temperature = 88;
+		// int relhumidity = 33;
+
+        // zmq::message_t message(20);
+        // snprintf ((char *) message.data(), 20,"%s %d %d", "hello", temperature, relhumidity);
+        // publisher.send(message);
+
+
+		// zmq::message_t message(20);
+		// // int zipcode = 10001;
+		// int temperature = 88;
+		// int relhumidity = 33;
+		// snprintf ((char *) message.data(), 20,
+		// 		  "%s %d %d", "hello", temperature, relhumidity);
+		// send values through zmq socket
+		// zmq::message_t replyProgress (ans.size());
+		// memcpy ((void *) replyProgress.data(), ans.data(), ans.size());
+		// publisher.send (message);
+
     }
     
     return 0;
