@@ -1,4 +1,4 @@
-(function() {
+$(document).ready(function() {
 
     var N = document.getElementById("box").clientWidth;
     var canvas = document.getElementById('canvas');
@@ -57,9 +57,15 @@
         x1.value = values.x1;
         y1.value = values.y1;
 
-        var url = makeUrl(values);
-        loadDoc(url, renderResponse, ctx);
-
+        var ajax_data = {};
+        $('.user_input').each(function() {
+            ajax_data[$(this).attr('name')] = values[$(this).attr('name')];
+        });
+        ajax_data["N"] = canvas.width;
+        ajax_data["M"] = canvas.width;
+        socket.emit('getRoots', {
+            data: ajax_data
+        });
     }
 
     function mouseMove(e) {
@@ -81,90 +87,78 @@
     }
 
     init();
+	
+    var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
 
-    var form = document.getElementById("frm");
-    form.addEventListener("submit", function(e) {
-        e.preventDefault();
-        var values = {};
-        for (var i = 0; i < this.length; i++) {
-            var name = this.elements[i].name;
-            var value = this.elements[i].value;
-            values[name] = value;
-        };
-        var url = makeUrl(values);
-        loadDoc(url, renderResponse, ctx);
+    socket.on('newnumber', function(msg) {
+        $('#progress-bar').html(msg.number.toString() + "%");
+		$('#progress-bar').attr("aria-valuenow", msg.number.toString());
+		$('#progress-bar').css("width", msg.number.toString() + "%");
+    });
+
+    $('form#emit').submit(function(event) {
+        event.preventDefault();
+        // console.log( $( this ).serialize() );
+        var ajax_data = {};
+        $('.user_input').each(function() {
+            ajax_data[$(this).attr('name')] = $(this).val();
+        });
+        ajax_data["N"] = canvas.width;
+        ajax_data["M"] = canvas.width;
+        socket.emit('getRoots', {
+            data: ajax_data
+        });
+        return false;
+    });
+
+	var defaultParams = {};
+	defaultParams.x0 = -1.7;
+	defaultParams.x1 = 1.7;
+	defaultParams.y0 = -1.7;
+	defaultParams.y1 = 1.7;
+	defaultParams.degree = 10;
+
+    $('button#reset').click(function(event) {
+        var ajax_data = {};
+        $('.user_input').each(function() {
+            ajax_data[$(this).attr('name')] = defaultParams[$(this).attr('name')];
+			$(this).val(defaultParams[$(this).attr('name')]);
+        });
+        ajax_data["N"] = canvas.width;
+        ajax_data["M"] = canvas.width;
+        socket.emit('getRoots', {
+            data: ajax_data
+        });
+        return false;
+    });
+
+    // $('button#abort').click(function(event) {
+    //     // var ajax_data = {};
+    //     // $('.user_input').each(function() {
+    //     //     ajax_data[$(this).attr('name')] = defaultParams[$(this).attr('name')];
+	// 	// 	$(this).val(defaultParams[$(this).attr('name')]);
+    //     // });
+    //     // ajax_data["N"] = canvas.width;
+    //     // ajax_data["M"] = canvas.width;
+    //     socket.emit('abort', {
+    //         data: "abort"
+    //     });
+    //     return false;
+    // });
+
+
+    socket.on('roots', function(msg) {
+        var arr = JSON.parse(msg.roots);
+        renderResponse(arr, ctx);
+        // var glyphs = document.getElementsByClassName("glyphicon-refresh");
+        // for (var i = 0; i < glyphs.length; i++) {
+        //     glyphs[i].className = "glyphcon";
+        // }
+
     });
 
 
-    document.getElementById("reset").addEventListener("click", function() {
-        var params = {};
-        params.x0 = -1.7;
-        params.x1 = 1.7;
-        params.y0 = -1.7;
-        params.y1 = 1.7;
-        params.degree = 10;
-
-        x0.value = params.x0;
-        y0.value = params.y0;
-        x1.value = params.x1;
-        y1.value = params.y1;
-        degree.value = params.degree;
-
-        var url = makeUrl(params);
-        loadDoc(url, renderResponse, ctx);
-    }, false);
-
-
-    function makeUrl(params) {
-        var N, M, x0, x1, y0, y1, degree, R, urlBase, url, x, y;
-        urlBase = "http://localhost:5000/api";
-
-        // N = document.getElementById("box").clientWidth;
-        N = canvas.width;
-
-        M = N;
-        degree = params.degree;
-        x0 = params.x0;
-        x1 = params.x1;
-        y0 = params.y0;
-        y1 = params.y1;
-
-        url = urlBase + "/" + N + "/" + M + "/" + x0 + "/" + x1 + "/" + y0 + "/" + y1 + "/" + degree;
-        return url;
-    }
-
-
-    var addAnimation = function() {
-        this.children[0].className += " glyphicon-refresh glyphicon-refresh-animate";
-    };
-    var buttons = document.getElementsByClassName("btn");
-    for (var i = 0; i < buttons.length; i++) {
-        buttons[i].addEventListener('click', addAnimation, false);
-    }
-
-
-    function loadDoc(url, cFunc, ctx) {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-            if (xhttp.readyState == 4) {
-                if (xhttp.status == 200) {
-                    cFunc(xhttp, ctx);
-                } else {
-                    console.log("ERROR", xhttp.status);
-                }
-                var glyphs = document.getElementsByClassName("glyphicon-refresh");
-                for (var i = 0; i < glyphs.length; i++) {
-                    glyphs[i].className = "glyphcon";
-                }
-            }
-        };
-        xhttp.open("GET", url, true);
-        xhttp.send();
-    }
-
-
-    function renderResponse(xmlhttp, ctx) {
-        var arr = JSON.parse(xmlhttp.responseText);
+    function renderResponse(arr, ctx) {
         var N = arr.N;
         var M = arr.M;
 
@@ -202,4 +196,4 @@
         }
     }
 
-})();
+});

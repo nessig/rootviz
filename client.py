@@ -1,5 +1,5 @@
 import zmq
-
+from time import sleep
 
 port = "5555"
 context = zmq.Context()
@@ -26,6 +26,7 @@ while i < M:
     # print("{0}%".format(100.0*i/M))
     i = int(a.split()[0])
     print i
+    # sleep()
 
 s1 = socket.recv()
 print s1[0:30]

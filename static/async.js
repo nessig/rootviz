@@ -1,22 +1,22 @@
-
-$(document).ready(function(){
+$(document).ready(function() {
     //connect to the socket server.
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
     var numbers_received = [];
 
-    //receive details from server
     socket.on('newnumber', function(msg) {
-        console.log("Received number" + msg.number);
-        //maintain a list of ten numbers
-        if (numbers_received.length >= 10){
-            numbers_received.shift();
-        }            
-        numbers_received.push(msg.number);
-        numbers_string = '';
-        for (var i = 0; i < numbers_received.length; i++){
-            numbers_string = numbers_string + '<p>' + numbers_received[i].toString() + '</p>';
-        }
-        $('#log').html(numbers_string);
+        $('#log').html("<p>" + msg.number.toString() + "</p>");
     });
 
+    $('form#emit').submit(function(event) {
+        event.preventDefault();
+        // console.log( $( this ).serialize() );
+        var ajax_data = {};
+        $('.user_input').each(function() {
+            ajax_data[$(this).attr('name')] = $(this).val();
+        });
+		ajax_data["N"] = 1200;
+		ajax_data["M"] = 1200;
+        socket.emit('roots', {data: ajax_data});
+        return false;
+    });
 });

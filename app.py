@@ -1,23 +1,16 @@
 from flask import Flask, render_template, url_for, copy_current_request_context
-# from flask.ext.socketio import SocketIO, emit
+from flask.ext.socketio import SocketIO, emit
 import zmq
-# from random import random
-# from time import sleep
-# from threading import Thread, Event
+from time import sleep
 
 
 
 app = Flask(__name__)
 # app.config['SECRET_KEY'] = 'secret!'
-# app.config['DEBUG'] = True
+app.config['DEBUG'] = True
 
 # #turn the flask app into a socketio app
-# socketio = SocketIO(app)
-
-# #random number Generator Thread
-# thread = Thread()
-# thread_stop_event = Event()
-
+socketio = SocketIO(app)
 
 
 port = "5555"
@@ -29,23 +22,11 @@ context2 = zmq.Context()
 socket2 = context2.socket(zmq.SUB)
 socket2.connect ("tcp://localhost:%s" % port2)
 
+# portAbort = "5557"
+# contextAbort = zmq.Context()
+# socketAbort = contextAbort.socket(zmq.REP)
+# socketAbort.connect ("tcp://localhost:%s" % portAbort)
 
-
-# @app.route("/api/<N>/<M>/<x0>/<x1>/<y0>/<y1>/<degree>")
-# def rootAPI(N, M, x0, x1, y0, y1, degree):
-#     msg = str(degree) + " " + str(N) + " " + str(M)  + " " + str(x0) + " " + str(x1) + " " + str(y0)  + " " + str(y1)
-#     socket.send(msg)
-#     s = socket.recv()
-#     return s
-    
-# @app.route('/stream')
-# def streamed_response():
-#     @stream_with_context
-#     def generate():
-#         yield 'Hello '
-#         yield "Nolan" #request.args['name']
-#         yield '!'
-#     return Response(generate())
 
 @app.route("/api/<N>/<M>/<x0>/<x1>/<y0>/<y1>/<degree>")
 def progressAPI(N, M, x0, x1, y0, y1, degree):
@@ -54,12 +35,9 @@ def progressAPI(N, M, x0, x1, y0, y1, degree):
     socket2.setsockopt_string(zmq.SUBSCRIBE, u"")
     i = 0.0
     while i < 100.0:
-        # i+=1
         s2 = socket2.recv()
         a = s2.split()[0]
-#        i = 100.0*float(a.rstrip("\x00"))/int(M)
         i = 100.0*float(a)/int(M)
-        # print("{0}%".format(100.0*i/int(M)))
         print(i)
 
     s1 = socket.recv()
@@ -70,49 +48,37 @@ def progressAPI(N, M, x0, x1, y0, y1, degree):
 def index():
     return render_template("index.html")
 
-# @app.route("/async")
-# def async():
-#     return render_template("async.html")
+@socketio.on('connect', namespace='/test')
+def connect():
+    print("connected")
 
-# class RandomThread(Thread):
-#     def __init__(self):
-#         self.delay = 1
-#         super(RandomThread, self).__init__()
-
-#     def randomNumberGenerator(self):
-#         """
-#         Generate a random number every 1 second and emit to a socketio instance (broadcast)
-#         Ideally to be run in a separate thread?
-#         """
-#         #infinite loop of magical random numbers
-#         print "Making random numbers"
-#         while not thread_stop_event.isSet():
-#             number = round(random()*10, 3)
-#             print number
-#             socketio.emit('newnumber', {'number': number}, namespace='/test')
-#             sleep(self.delay)
-
-#     def run(self):
-#         self.randomNumberGenerator()
+@socketio.on('abort', namespace='/test')
+def abort(abort):
+    socketAbort.send("abort")
 
 
-# @socketio.on('connect', namespace='/test')
-# def test_connect():
-#     # need visibility of the global thread object
-#     global thread
-#     print('Client connected')
-
-#     #Start the random number generator thread only if the thread has not been started before.
-#     if not thread.isAlive():
-#         print "Starting Thread"
-#         thread = RandomThread()
-#         thread.start()
-
-# @socketio.on('disconnect', namespace='/test')
-# def test_disconnect():
-#     print('Client disconnected')
+@socketio.on('getRoots', namespace='/test')
+def send_roots(getRoots):
+    print("json is", getRoots[u'data'])
+    data = getRoots[u'data']
+    M = float(data[u'M'])
+    msg = str(data[u"degree"]) + " " + str(data[u"N"]) + " " + str(data[u"M"]) + " " + str(data[u"x0"]) + " " + str(data[u"x1"]) + " " + str(data[u"y0"])  + " " + str(data[u"y1"])
+    socket.send(msg)
+    socket2.setsockopt_string(zmq.SUBSCRIBE, u"")
+    i = 0.0
+    while i < 100.0:
+        s2 = socket2.recv()
+        a = s2
+        old_i = i
+        i = 100.0*float(a.split()[0])/M
+        if int(old_i) != int(i):
+            socketio.emit('newnumber', {'number': int(i)}, namespace='/test')
+        sleep(0.00001)
+        
+    s1 = socket.recv()
+    socketio.emit("roots", {"roots": s1}, namespace='/test')
 
 
 if __name__ == '__main__':
-#    socketio.run(app)
-    app.run(debug=True)
+   socketio.run(app)
+
