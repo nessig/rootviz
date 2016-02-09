@@ -14,6 +14,37 @@ $(document).ready(function() {
     var y1 = document.getElementById("y1");
     var degree = document.getElementById("degree");
 
+    function isInt(n) {
+        return Number(n) === n && n % 1 === 0;
+    }
+
+    function isFloat(n) {
+        return Number(n) === n && n % 1 !== 0;
+    }
+
+    function isNum(n) {
+        return Number(n) === n;
+    }
+
+    function verifyInputs(inputs) {
+        if (!(inputs["x0"])) throw "x0 is a required field";
+        if (!(inputs["x1"])) throw "x1 is a required field";
+        if (!(inputs["y0"])) throw "y0 is a required field";
+        if (!(inputs["y1"])) throw "y1 is a required field";
+        if (!(inputs["N"])) throw "Screen width error";
+        if (!(inputs["M"])) throw "Screen height error";
+        if (!(inputs["degree"])) throw "degree is a required field";
+        if (!(isInt(inputs["N"]))) throw "Screen width must be an integer";
+        if (!(isInt(inputs["M"]))) throw "Screen height must be an integer";
+
+        if (!(isInt(inputs["degree"]))) throw "degree must be an integer";
+        if (!(isNum(inputs["x0"]))) throw "x0 must be a number";
+        if (!(isNum(inputs["x1"]))) throw "x1 must be a number";
+        if (!(isNum(inputs["y0"]))) throw "y0 must be a number";
+        if (!(isNum(inputs["y1"]))) throw "y1 must be a number";
+    }
+
+
 
 
     function init() {
@@ -52,20 +83,29 @@ $(document).ready(function() {
         values.y0 = Number(y0.value) + ylen * y0p / N;
         values.y1 = Number(y0.value) + ylen * y1p / N;
 
-        x0.value = values.x0;
-        y0.value = values.y0;
-        x1.value = values.x1;
-        y1.value = values.y1;
+        $('#error').html("");
 
         var ajax_data = {};
         $('.user_input').each(function() {
-            ajax_data[$(this).attr('name')] = values[$(this).attr('name')];
+            ajax_data[$(this).attr('name')] = Number(values[$(this).attr('name')]);
         });
         ajax_data["N"] = canvas.width;
         ajax_data["M"] = canvas.width;
-        socket.emit('getRoots', {
-            data: ajax_data
-        });
+        try {
+            verifyInputs(ajax_data);
+            x0.value = values.x0;
+            y0.value = values.y0;
+            x1.value = values.x1;
+            y1.value = values.y1;
+
+            socket.emit('getRoots', {
+                data: ajax_data
+            });
+        } catch (error) {
+            $('#error').html(error);
+			ctx.putImageData(dst, 0, 0);
+        }
+        return false;
     }
 
     function mouseMove(e) {
@@ -87,48 +127,65 @@ $(document).ready(function() {
     }
 
     init();
-	
+
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
 
     socket.on('newnumber', function(msg) {
         $('#progress-bar').html(msg.number.toString() + "%");
-		$('#progress-bar').attr("aria-valuenow", msg.number.toString());
-		$('#progress-bar').css("width", msg.number.toString() + "%");
+        $('#progress-bar').attr("aria-valuenow", msg.number.toString());
+        $('#progress-bar').css("width", msg.number.toString() + "%");
     });
 
     $('form#emit').submit(function(event) {
         event.preventDefault();
         // console.log( $( this ).serialize() );
+
+        $('#error').html("");
+
         var ajax_data = {};
         $('.user_input').each(function() {
-            ajax_data[$(this).attr('name')] = $(this).val();
+            ajax_data[$(this).attr('name')] = Number($(this).val());
         });
         ajax_data["N"] = canvas.width;
         ajax_data["M"] = canvas.width;
-        socket.emit('getRoots', {
-            data: ajax_data
-        });
+        try {
+            verifyInputs(ajax_data);
+            socket.emit('getRoots', {
+                data: ajax_data
+            });
+        } catch (error) {
+            $('#error').html(error);
+        }
         return false;
     });
 
-	var defaultParams = {};
-	defaultParams.x0 = -1.7;
-	defaultParams.x1 = 1.7;
-	defaultParams.y0 = -1.7;
-	defaultParams.y1 = 1.7;
-	defaultParams.degree = 10;
+    var defaultParams = {};
+    defaultParams.x0 = -1.7;
+    defaultParams.x1 = 1.7;
+    defaultParams.y0 = -1.7;
+    defaultParams.y1 = 1.7;
+    defaultParams.degree = 10;
 
     $('button#reset').click(function(event) {
+        $('#error').html("");
+
         var ajax_data = {};
         $('.user_input').each(function() {
             ajax_data[$(this).attr('name')] = defaultParams[$(this).attr('name')];
-			$(this).val(defaultParams[$(this).attr('name')]);
+            $(this).val(defaultParams[$(this).attr('name')]);
         });
         ajax_data["N"] = canvas.width;
         ajax_data["M"] = canvas.width;
-        socket.emit('getRoots', {
-            data: ajax_data
-        });
+
+        try {
+            verifyInputs(ajax_data);
+            socket.emit('getRoots', {
+                data: ajax_data
+            });
+        } catch (error) {
+            $('#error').html(error);
+        }
+
         return false;
     });
 
@@ -136,7 +193,7 @@ $(document).ready(function() {
     //     // var ajax_data = {};
     //     // $('.user_input').each(function() {
     //     //     ajax_data[$(this).attr('name')] = defaultParams[$(this).attr('name')];
-	// 	// 	$(this).val(defaultParams[$(this).attr('name')]);
+    // 	// 	$(this).val(defaultParams[$(this).attr('name')]);
     //     // });
     //     // ajax_data["N"] = canvas.width;
     //     // ajax_data["M"] = canvas.width;

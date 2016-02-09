@@ -52,14 +52,13 @@ def index():
 def connect():
     print("connected")
 
-@socketio.on('abort', namespace='/test')
-def abort(abort):
-    socketAbort.send("abort")
+# @socketio.on('abort', namespace='/test')
+# def abort(abort):
+#     socketAbort.send("abort")
 
 
 @socketio.on('getRoots', namespace='/test')
 def send_roots(getRoots):
-    print("json is", getRoots[u'data'])
     data = getRoots[u'data']
     M = float(data[u'M'])
     msg = str(data[u"degree"]) + " " + str(data[u"N"]) + " " + str(data[u"M"]) + " " + str(data[u"x0"]) + " " + str(data[u"x1"]) + " " + str(data[u"y0"])  + " " + str(data[u"y1"])
