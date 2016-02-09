@@ -1,5 +1,6 @@
 # rootviz
-rootviz is a simple web app for visulizing the distribution of zeros of the family of Littlewood polynomials, which are polynomials with coefficents equal to &permil; 1.
+rootviz is a simple web app for visulizing the distribution of zeros of the family of Littlewood polynomials, which are polynomials with coefficents equal to either +1 or -1. This distribution has many interesting properties, but my favorites are the fractal-like beauty and detail it exhibits:
+![Degree 16 family of roots](/images/github_rootviz_example.png "Degree 16 family of roots")
 
 ## Installation
 The flask app uses pyzmq, which can be installed using easy_install, pip, anaconda, etc...
