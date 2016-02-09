@@ -6,6 +6,18 @@ The following compiles using Homebrew installed gcc 5.3:
 ```
 Check the Makefile for additional flags.
 
+Then to run the flask app just run:
+```
+	python app.py
+```
+
+Then start up the root server run:
+```
+	./build/serve_roots
+```
+
+Then visit ```http://localhost:5000``` to see the app!
+
 
 TODO:
 * Replace OpenMP with MPI/something else
@@ -18,6 +30,6 @@ TODO:
    as the original data sent contains high enough resolution.
    Otherwise, just resend the request for higher res data, and clear the old
    data once you've received it.
-* Redirect progress output from std::cout to zeromq then somehow to the client
+* ~~Redirect progress output from std::cout to zeromq then somehow to the client~~
 * Add content explaining how to use/conceptual background.
 	
