@@ -8,6 +8,14 @@ $(document).ready(function() {
     canvas.width = N;
     canvas.height = N;
 
+    $(window).resize(function() {
+        var N = document.getElementById("box").clientWidth;
+		var canvas = document.getElementById('canvas');
+        canvas.width = N;
+        canvas.height = N;
+
+    });
+
     var x0 = document.getElementById("x0");
     var y0 = document.getElementById("y0");
     var x1 = document.getElementById("x1");
@@ -26,6 +34,11 @@ $(document).ready(function() {
         return Number(n) === n;
     }
 
+    var bootstrap_alert = function() {};
+    bootstrap_alert.warning = function(message) {
+        $('#error').html('<div class="alert alert-danger"><a class="close" data-dismiss="alert">×</a><span>' + message + '</span></div>');
+    };
+
     function verifyInputs(inputs) {
         if (!(inputs["x0"])) throw "x0 is a required field";
         if (!(inputs["x1"])) throw "x1 is a required field";
@@ -42,10 +55,13 @@ $(document).ready(function() {
         if (!(isNum(inputs["x1"]))) throw "x1 must be a number";
         if (!(isNum(inputs["y0"]))) throw "y0 must be a number";
         if (!(isNum(inputs["y1"]))) throw "y1 must be a number";
+
+        if ((inputs["x0"] >= inputs["x1"])) throw "Minimum x must be less than maximum x";
+        if ((inputs["y0"] >= inputs["y1"])) throw "Minimum y must be less than maximum y";
+
+
+
     }
-
-
-
 
     function init() {
         canvas.addEventListener('mousedown', mouseDown, false);
@@ -102,8 +118,9 @@ $(document).ready(function() {
                 data: ajax_data
             });
         } catch (error) {
-            $('#error').html(error);
-			ctx.putImageData(dst, 0, 0);
+            bootstrap_alert.warning(error);
+            // $('#error').html(error);
+            ctx.putImageData(dst, 0, 0);
         }
         return false;
     }
@@ -139,7 +156,6 @@ $(document).ready(function() {
     $('form#emit').submit(function(event) {
         event.preventDefault();
         // console.log( $( this ).serialize() );
-
         $('#error').html("");
 
         var ajax_data = {};
@@ -154,7 +170,8 @@ $(document).ready(function() {
                 data: ajax_data
             });
         } catch (error) {
-            $('#error').html(error);
+            // $('#error').html(error);
+            bootstrap_alert.warning(error);
         }
         return false;
     });
@@ -183,7 +200,7 @@ $(document).ready(function() {
                 data: ajax_data
             });
         } catch (error) {
-            $('#error').html(error);
+            bootstrap_alert.warning(error);
         }
 
         return false;
