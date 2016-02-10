@@ -1,6 +1,7 @@
 $(document).ready(function() {
 
-    var N = document.getElementById("box").clientWidth;
+	var R = 1.5;
+    var N = Math.floor(document.getElementById("box").clientWidth / 1.5);
     var canvas = document.getElementById('canvas');
 
     var ctx = canvas.getContext('2d');
@@ -9,8 +10,8 @@ $(document).ready(function() {
     canvas.height = N;
 
     $(window).resize(function() {
-        var N = document.getElementById("box").clientWidth;
-		var canvas = document.getElementById('canvas');
+        var N = Math.floor(document.getElementById("box").clientWidth / 1.5);
+        var canvas = document.getElementById('canvas');
         canvas.width = N;
         canvas.height = N;
 
@@ -59,8 +60,6 @@ $(document).ready(function() {
         if ((inputs["x0"] >= inputs["x1"])) throw "Minimum x must be less than maximum x";
         if ((inputs["y0"] >= inputs["y1"])) throw "Minimum y must be less than maximum y";
 
-
-
     }
 
     function init() {
@@ -74,6 +73,7 @@ $(document).ready(function() {
         drag = false;
 
     function mouseDown(e) {
+        var N = Math.floor(document.getElementById("box").clientWidth / 1.5);
         dst = ctx.getImageData(0, 0, N, N); //x,y,w,h
         var bcr = canvas.getBoundingClientRect();
         rect.startX = e.clientX - bcr.left;
@@ -84,6 +84,7 @@ $(document).ready(function() {
     function mouseUp() {
         drag = false;
         var values = {};
+        var N = Math.floor(document.getElementById("box").clientWidth / 1.5);
 
         values.degree = degree.value;
 
@@ -268,6 +269,14 @@ $(document).ready(function() {
                 ctx.fillText(xtick, N / 2 - xOff, i * N / numTicks);
             }
         }
+
+        resetProgress();
+    }
+
+    function resetProgress() {
+        $('#progress-bar').html("&nbsp;&nbsp;0%");
+        $('#progress-bar').attr("aria-valuenow", "0");
+        $('#progress-bar').css("width", "0%");
     }
 
 });

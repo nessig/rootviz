@@ -20,7 +20,9 @@ socket.connect ("tcp://localhost:%s" % port)
 port2 = "5556"
 context2 = zmq.Context()
 socket2 = context2.socket(zmq.SUB)
+#socket2.setsockopt(zmq.CONFLATE, 1)
 socket2.connect ("tcp://localhost:%s" % port2)
+
 
 # portAbort = "5557"
 # contextAbort = zmq.Context()
@@ -64,12 +66,15 @@ def send_roots(getRoots):
     msg = str(data[u"degree"]) + " " + str(data[u"N"]) + " " + str(data[u"M"]) + " " + str(data[u"x0"]) + " " + str(data[u"x1"]) + " " + str(data[u"y0"])  + " " + str(data[u"y1"])
     socket.send(msg)
     socket2.setsockopt_string(zmq.SUBSCRIBE, u"")
+    # socket2.setsockopt(zmq.CONFLATE, 1)
     i = 0.0
     while i < 100.0:
         s2 = socket2.recv()
-        a = s2
+        a = s2.split()[0]
         old_i = i
-        i = 100.0*float(a.split()[0])/M
+        # print(s2, type(s2))
+        # print(a, type(a))
+        i = 100.0*float(a)/M
         if int(old_i) != int(i):
             socketio.emit('newnumber', {'number': int(i)}, namespace='/test')
         sleep(0.00001)

@@ -1,5 +1,12 @@
+/* canvas { */
+/*     width: 100%; */
+/* } */
 canvas {
-    width: 100%;
+    padding: 0;
+    margin: auto;
+    display: block;
+	cursor: crosshair;
+    /* width: 800px; */
 }
 
 .progress-label {

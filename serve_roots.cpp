@@ -20,10 +20,97 @@ inline T abs2(std::complex<T> z)
     return x*x + y*y;
 }
 
+float clip(float n, float lower, float upper) {
+  return std::max(lower, std::min(n, upper));
+}
+
+void deriv(float* x, float* y, float* dydx, float* dx) {
+	// (f(x + h) - f(x - h))/2h
+	int N = sizeof(x)/sizeof(float);
+	for (int i=0; i < N-1;i++) {
+		dx[i] = x[i+1] - x[i];
+		float dy = y[i+1] - y[i];
+		dydx[i] = dy/dx[i];
+		std::cout << "dydx[" << i << "] = " << dydx[i] << "dx[i] = " << dx[i] << std::endl;
+	}
+}
+
+void getThresh(float* x, float* y, float& low, float& high, int N) {
+	// int N = sizeof(x)/sizeof(float);
+	// float* dydx = new float[N-1];
+	float dydx [N-1];
+	float dx [N-1];
+	std::cout << "N=" << N << std::endl;
+	for (int i=0; i < N-1;i++) {
+		dx[i] = x[i+1] - x[i];
+		float dy = y[i+1] - y[i];
+		dydx[i] = dy/dx[i];
+		std::cout << "dydx[" << i << "] = " << dydx[i] << "dx[i] = " << dx[i] << "dy[i]= " << dy << std::endl;
+	}
+
+	// deriv(x, y, dydx, dx);
+	float maxVal = *std::max_element(dydx, dydx+N-1);
+	std::cout << "maxVal=" << maxVal << std::endl;
+	int m = 0;
+	for (int i=0; i<N; i++) {
+		if (dydx[i] == maxVal) {
+			m = i;
+		}
+	}
+	std::cout << "m=" << m << std::endl;
+	float threshLowVal = dydx[0];
+	int lowInd = 0;
+	for (int i=0; i<m-1; i++) {
+		if (threshLowVal < dydx[i+1]/dydx[i]) {
+			threshLowVal = dydx[i+1]/dydx[i];
+			lowInd = i;
+		}
+	}
+	std::cout << "lowInd=" << lowInd << std::endl;
+	float threshHighVal = dydx[0];
+	int highInd = 0;
+	for (int i=m+1; i<N; i++) {
+		if (threshHighVal < dydx[i]/dydx[i+1]) {
+			threshHighVal = dydx[i]/dydx[i+1];
+			highInd = i;
+		}
+	}
+	std::cout << "highInd=" << highInd << std::endl;
+	low = x[lowInd];
+	high = x[highInd];
+	// delete[] dydx;
+	// delete[] dx;
+}
+
+int numSmaller(float x, float* result, int N) {
+	int count = 0;
+	// int N = sizeof(result)/sizeof(float);
+	for (int i=0; i<N; i++) {
+		float dat = std::pow(result[i], 0.5);
+		if (dat < x) {
+			count++;
+		}
+	}
+	return count;
+}
+
+// def getThresh(p,c):
+//     dcdp,dp = deriv(c,p)
+//     m = argmax(dcdp)
+//     low = dcdp[:m]
+//     dpLow = dp[:m]
+//     high = dcdp[m+1:]
+//     dpHigh = dp[m+1:]
+//     threshHigh = dpHigh[argmax(high[:-1]/high[1:])]
+//     threshLow = dpLow[argmax(low[1:]/low[:-1])]
+//     return threshLow,threshHigh
+
 // colormap similar to matplotlib's gist_heat
-static void colormap(double x, float& r, float& g, float& b)
+static void colormap(double x, float& r, float& g, float& b, float low, float high)
 {
     x = std::min(std::max(0.0, x), 1.0); // clamp
+    // x = std::min(std::max(low, x), high); // clamp	
+	// float x = clip(xc, low, high);
     r = std::min(1.0, x/0.7);
     g = std::max(0.0, (x - 0.477)/(1 - 0.477));
     b = std::max(0.0, (x - 0.75)/(1 - 0.75));
@@ -124,12 +211,14 @@ void minPolys(float* result, int N, int M,
 			std::string ans = progress.str();
 
 			zmq::message_t message(15);
+			// snprintf ((char *) message.data(), 15, "%s", ans.data());
+			// snprintf ((char *) message.data(), 15, "%d", linesdone);
 			// snprintf ((char *) message.data(), 15, "%s %s", "hello", ans.data());
-			snprintf ((char *) message.data(), 15, "%s", ans.data());
+
 			// snprintf ((char *) message.data(), 15, "%s", ans.data());
 			// send values through zmq socket
 			// zmq::message_t replyProgress (ans.size());
-			// memcpy ((void *) replyProgress.data(), ans.data(), ans.size());
+			memcpy ((void *) message.data(), ans.data(), ans.size());
 			publisher.send (message);
 
         }
@@ -181,6 +270,20 @@ int main() {
 		std::string ans;
 
 
+		int numPts = 101;
+		float* p = new float[numPts];
+		float* c = new float[numPts];
+		for (int i=0; i < numPts; i++) {
+			p[i] = 0.1+1.2*i/numPts;
+			c[i] = numSmaller(p[i], result, N*M);
+			std::cout << p[i] << "c[i]= " << c[i] << std::endl;
+		}
+
+		float low, high;
+		getThresh(p, c, low, high, numPts);
+
+		std::cout << low << " " << high << std::endl;
+
 		// write rgba values encoding the distribution into a string stream in JSON format
 		ss << "{\"N\":" << N << "," << "\"M\":" <<  M << "," << "\"roots\":[";
 		const char* separator = "";
@@ -188,7 +291,8 @@ int main() {
 			for (int i=0; i < N; i+=1) {
 				// ss << result[N*j + i] << " ";
 				float r,g,b;
-				colormap(1 - (pow(result[N*j + i], 0.01) - 0.95)/0.1, r,g,b);
+				colormap(1 - pow(result[N*j + i], 0.5), r,g,b, low, high);
+				// colormap(1 - (pow(result[N*j + i], 0.01) - 0.95)/0.1, r,g,b);
 				// colormap(1 - result[N*j + i], r,g,b);
 			    
 				ss << separator << lround(r*255);
@@ -199,7 +303,7 @@ int main() {
 			}
 		}
 		ss << "]}";
-
+		// writeFile("minpoly.dat", N, M, result);
 		// clean up and free the array
 		delete[] result;
 
@@ -210,6 +314,8 @@ int main() {
 		zmq::message_t reply (ans.size());
 		memcpy ((void *) reply.data(), ans.data(), ans.size());
 		socket.send (reply);
+
+		
 		
 
     }
