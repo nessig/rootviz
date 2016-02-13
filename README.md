@@ -35,7 +35,7 @@ Then start up the root server run:
 	./build/serve_roots
 ```
 
-Then visit ```http://localhost:5000``` to see the app!
+Then visit [http://localhost:5000](http://localhost:5000) to see the app!
 
 
 ## TODO:
