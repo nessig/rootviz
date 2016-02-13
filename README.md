@@ -4,7 +4,6 @@ rootviz is a simple web app for visulizing the distribution of zeros of the fami
 
 ## Usage/What's going on?
 The application has three main components:
-
 1. serve_roots.cpp, which calculates the 2D distribution of roots, then applys a colormap to these values, outputting a 2D array of rgb values.
 2. appsubset.js, which controls the client side requests for roots, and renders the array of rgb values using an HTML5 canvas element.
 3. app.py, which is a typical flask application.
