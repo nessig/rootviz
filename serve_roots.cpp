@@ -31,7 +31,6 @@ void deriv(float* x, float* y, float* dydx, float* dx) {
 		dx[i] = x[i+1] - x[i];
 		float dy = y[i+1] - y[i];
 		dydx[i] = dy/dx[i];
-		std::cout << "dydx[" << i << "] = " << dydx[i] << "dx[i] = " << dx[i] << std::endl;
 	}
 }
 
@@ -40,24 +39,20 @@ void getThresh(float* x, float* y, float& low, float& high, int N) {
 	// float* dydx = new float[N-1];
 	float dydx [N-1];
 	float dx [N-1];
-	std::cout << "N=" << N << std::endl;
 	for (int i=0; i < N-1;i++) {
 		dx[i] = x[i+1] - x[i];
 		float dy = y[i+1] - y[i];
 		dydx[i] = dy/dx[i];
-		std::cout << "dydx[" << i << "] = " << dydx[i] << "dx[i] = " << dx[i] << "dy[i]= " << dy << std::endl;
 	}
 
 	// deriv(x, y, dydx, dx);
 	float maxVal = *std::max_element(dydx, dydx+N-1);
-	std::cout << "maxVal=" << maxVal << std::endl;
 	int m = 0;
 	for (int i=0; i<N; i++) {
 		if (dydx[i] == maxVal) {
 			m = i;
 		}
 	}
-	std::cout << "m=" << m << std::endl;
 	float threshLowVal = dydx[0];
 	int lowInd = 0;
 	for (int i=0; i<m-1; i++) {
@@ -66,7 +61,6 @@ void getThresh(float* x, float* y, float& low, float& high, int N) {
 			lowInd = i;
 		}
 	}
-	std::cout << "lowInd=" << lowInd << std::endl;
 	float threshHighVal = dydx[0];
 	int highInd = 0;
 	for (int i=m+1; i<N; i++) {
@@ -75,7 +69,6 @@ void getThresh(float* x, float* y, float& low, float& high, int N) {
 			highInd = i;
 		}
 	}
-	std::cout << "highInd=" << highInd << std::endl;
 	low = x[lowInd];
 	high = x[highInd];
 	// delete[] dydx;
@@ -276,13 +269,10 @@ int main() {
 		for (int i=0; i < numPts; i++) {
 			p[i] = 0.1+1.2*i/numPts;
 			c[i] = numSmaller(p[i], result, N*M);
-			std::cout << p[i] << "c[i]= " << c[i] << std::endl;
 		}
 
 		float low, high;
 		getThresh(p, c, low, high, numPts);
-
-		std::cout << low << " " << high << std::endl;
 
 		// write rgba values encoding the distribution into a string stream in JSON format
 		ss << "{\"N\":" << N << "," << "\"M\":" <<  M << "," << "\"roots\":[";

@@ -1,5 +1,4 @@
 $(document).ready(function() {
-
 	var R = 1.5;
     var N = Math.floor(document.getElementById("box").clientWidth / 1.5);
     var canvas = document.getElementById('canvas');
