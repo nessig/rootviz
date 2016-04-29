@@ -1,5 +1,5 @@
 # rootviz
-rootviz is a simple web app for visulizing the distribution of zeros of the family of Littlewood polynomials, which are polynomials with coefficents equal to either +1 or -1. This distribution has many interesting properties, but my favorites are the fractal-like beauty and detail it exhibits:
+rootviz is a simple web app for visulizing the distribution of zeros of the family of Littlewood polynomials described in [John Baez's article](https://johncarlosbaez.wordpress.com/2011/12/11/the-beauty-of-roots/), which are polynomials with coefficents equal to either +1 or -1. This distribution has many interesting properties, but my favorites are the fractal-like beauty and detail it exhibits:
 ![Degree 16 family of roots](/images/github_rootviz_example.png "Degree 16 family of roots")
 
 ## Usage/What's going on?
