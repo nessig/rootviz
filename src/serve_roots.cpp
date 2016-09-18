@@ -20,10 +20,90 @@ inline T abs2(std::complex<T> z)
     return x*x + y*y;
 }
 
+float clip(float n, float lower, float upper) {
+  return std::max(lower, std::min(n, upper));
+}
+
+void deriv(float* x, float* y, float* dydx, float* dx) {
+	// (f(x + h) - f(x - h))/2h
+	int N = sizeof(x)/sizeof(float);
+	for (int i=0; i < N-1;i++) {
+		dx[i] = x[i+1] - x[i];
+		float dy = y[i+1] - y[i];
+		dydx[i] = dy/dx[i];
+	}
+}
+
+void getThresh(float* x, float* y, float& low, float& high, int N) {
+	// int N = sizeof(x)/sizeof(float);
+	// float* dydx = new float[N-1];
+	float dydx [N-1];
+	float dx [N-1];
+	for (int i=0; i < N-1;i++) {
+		dx[i] = x[i+1] - x[i];
+		float dy = y[i+1] - y[i];
+		dydx[i] = dy/dx[i];
+	}
+
+	// deriv(x, y, dydx, dx);
+	float maxVal = *std::max_element(dydx, dydx+N-1);
+	int m = 0;
+	for (int i=0; i<N; i++) {
+		if (dydx[i] == maxVal) {
+			m = i;
+		}
+	}
+	float threshLowVal = dydx[0];
+	int lowInd = 0;
+	for (int i=0; i<m-1; i++) {
+		if (threshLowVal < dydx[i+1]/dydx[i]) {
+			threshLowVal = dydx[i+1]/dydx[i];
+			lowInd = i;
+		}
+	}
+	float threshHighVal = dydx[0];
+	int highInd = 0;
+	for (int i=m+1; i<N; i++) {
+		if (threshHighVal < dydx[i]/dydx[i+1]) {
+			threshHighVal = dydx[i]/dydx[i+1];
+			highInd = i;
+		}
+	}
+	low = x[lowInd];
+	high = x[highInd];
+	// delete[] dydx;
+	// delete[] dx;
+}
+
+int numSmaller(float x, float* result, int N) {
+	int count = 0;
+	// int N = sizeof(result)/sizeof(float);
+	for (int i=0; i<N; i++) {
+		float dat = std::pow(result[i], 0.5);
+		if (dat < x) {
+			count++;
+		}
+	}
+	return count;
+}
+
+// def getThresh(p,c):
+//     dcdp,dp = deriv(c,p)
+//     m = argmax(dcdp)
+//     low = dcdp[:m]
+//     dpLow = dp[:m]
+//     high = dcdp[m+1:]
+//     dpHigh = dp[m+1:]
+//     threshHigh = dpHigh[argmax(high[:-1]/high[1:])]
+//     threshLow = dpLow[argmax(low[1:]/low[:-1])]
+//     return threshLow,threshHigh
+
 // colormap similar to matplotlib's gist_heat
-static void colormap(double x, float& r, float& g, float& b)
+static void colormap(double x, float& r, float& g, float& b, float low, float high)
 {
     x = std::min(std::max(0.0, x), 1.0); // clamp
+    // x = std::min(std::max(low, x), high); // clamp	
+	// float x = clip(xc, low, high);
     r = std::min(1.0, x/0.7);
     g = std::max(0.0, (x - 0.477)/(1 - 0.477));
     b = std::max(0.0, (x - 0.75)/(1 - 0.75));
@@ -93,7 +173,7 @@ void minPolys(float* result, int N, int M,
             if(abs(z) > 1)
                 z = 1.0/z;
             // complex zpowers[degree];
-			complex * zpowers = new complex[degree];
+	    complex * zpowers = new complex[degree];
             for(int k = 0; k < degree; ++k)
                 zpowers[k] = pow(z, k+1);
             // Precompute bounds on the absolute value of partial sum of last
@@ -108,7 +188,7 @@ void minPolys(float* result, int N, int M,
             // polynomials, but we reduce that by a factor of two by making use
             // of symmetry [for every P(z) there is a -P(z) in the set]
             double minpoly = evaluate(1.0, bounds, zpowers, degree-1);
-			delete[] zpowers;
+	    delete[] zpowers;
             // Weight of 1/|z|^degree implies z <--> 1/z symmetry
 			
             result[N*j + i] = sqrt(minpoly / pow(abs(z),degree));
@@ -183,6 +263,17 @@ int main() {
 		std::string ans;
 
 
+		int numPts = 101;
+		float* p = new float[numPts];
+		float* c = new float[numPts];
+		for (int i=0; i < numPts; i++) {
+			p[i] = 0.1+1.2*i/numPts;
+			c[i] = numSmaller(p[i], result, N*M);
+		}
+
+		float low, high;
+		getThresh(p, c, low, high, numPts);
+
 		// write rgba values encoding the distribution into a string stream in JSON format
 		ss << "{\"N\":" << N << "," << "\"M\":" <<  M << "," << "\"roots\":[";
 		const char* separator = "";
@@ -190,7 +281,8 @@ int main() {
 			for (int i=0; i < N; i+=1) {
 				// ss << result[N*j + i] << " ";
 				float r,g,b;
-				colormap(1 - (pow(result[N*j + i], 0.01) - 0.95)/0.1, r,g,b);
+				colormap(1 - pow(result[N*j + i], 0.5), r,g,b, low, high);
+				// colormap(1 - (pow(result[N*j + i], 0.01) - 0.95)/0.1, r,g,b);
 				// colormap(1 - result[N*j + i], r,g,b);
 			    
 				ss << separator << lround(r*255);
@@ -201,7 +293,7 @@ int main() {
 			}
 		}
 		ss << "]}";
-
+		// writeFile("minpoly.dat", N, M, result);
 		// clean up and free the array
 		delete[] result;
 
@@ -212,6 +304,8 @@ int main() {
 		zmq::message_t reply (ans.size());
 		memcpy ((void *) reply.data(), ans.data(), ans.size());
 		socket.send (reply);
+
+		
 		
 
     }
