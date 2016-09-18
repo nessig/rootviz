@@ -147,12 +147,12 @@ void minPolys(float* result, int N, int M,
 
 int main(int argc, char* argv[]) {
 	// writeFile("app/static/minpoly.dat", N, M, result);
-	int degree = 14;
+	int degree = 16;
 	int N = 300;
 	// double R = 1.7;
 	// double x = 1.0, y = 0.0;
 	double x0 = 0.0, x1 = 1.7, y0 = 0.0, y1 = 1.7;
-	std::string name = "minpoly2.dat";
+	std::string name = "data/minpoly2.dat";
 	if(argc > 1)
 	{
         degree = atoi(argv[1]);
