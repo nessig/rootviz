@@ -173,7 +173,7 @@ void minPolys(float* result, int N, int M,
             if(abs(z) > 1)
                 z = 1.0/z;
             // complex zpowers[degree];
-	    complex * zpowers = new complex[degree];
+            complex * zpowers = new complex[degree];
             for(int k = 0; k < degree; ++k)
                 zpowers[k] = pow(z, k+1);
             // Precompute bounds on the absolute value of partial sum of last

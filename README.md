@@ -51,4 +51,5 @@ Then visit [http://localhost:5000](http://localhost:5000) to see the app!
    data once you've received it.
 * ~~Redirect progress output from std::cout to zeromq then somehow to the client~~
 * Add more/better written usage/conceptual background!
-	
+* Finish generalizing the build process for gcc. Got OpenMP to work for clang so that should work once I add it as a compiler option.
+* Also these instructions / README sucks. Need to fix too.
