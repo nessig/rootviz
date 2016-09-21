@@ -42,9 +42,9 @@ If you're using Cmake, then for an out-of-source build do the following:
 ```
     mkdir build && cd build
 ```
-If you want to compile with something other than ```CXX``` then make sure you set it before calling cmake. For example, if I wanted to use g++-6, then I would do the following from the build directory:
+If you want to compile with something other than ```CXX``` then make sure you set it before calling cmake. For example, if I wanted to use `g++-6`, then I would do the following from the build directory:
 ```
-CC=gcc-6 CXX=g++-6 cmake ..
+    CC=gcc-6 CXX=g++-6 cmake ..
 ```
 
 
