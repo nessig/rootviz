@@ -4,7 +4,7 @@ import zmq
 from time import sleep
 
 
-app = Flask(__name__, template_folder='../templates')
+app = Flask(__name__)
 # app.config['SECRET_KEY'] = 'secret!'
 app.config['DEBUG'] = True
 
