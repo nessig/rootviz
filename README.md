@@ -39,7 +39,6 @@ Then visit [http://localhost:5000](http://localhost:5000) to see the app!
 
 
 ## TODO:
-* Replace OpenMP with MPI/something else
 * ~~Determine the number of points (N,M) using the client's screen size~~
 * Use modulus instead of cutting off high counts
 * ~~SPEED UP JS!~~
